@@ -5,18 +5,25 @@ import android.animation.ObjectAnimator
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.util.Log
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModel
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.LayoutManager
 import com.example.workoutapp.adapter.ExerciseAdapter
 import com.example.workoutapp.data.Exercise
+import com.example.workoutapp.data.ExerciseRoomDatabse
 import com.example.workoutapp.data.ModelFake
 import com.example.workoutapp.databinding.ActivityExcerciseBinding
-import kotlinx.coroutines.delay
+import com.example.workoutapp.repository.Repository
+import com.example.workoutapp.viewmodel.ExerciseViewModel
+import com.example.workoutapp.viewmodel.ExerciseViewModelFactory
 
 
 class ExerciseActivity : AppCompatActivity() {
@@ -30,21 +37,50 @@ class ExerciseActivity : AppCompatActivity() {
     //private lateinit var mediaPlayer: MediaPlayer
 
     private val modelFake:ModelFake = ModelFake("singleton")
-    private val exercises:List<Exercise> = modelFake.getExercises()
+    private var exercises:List<Exercise> = modelFake.getExercises()
 
     private var exerciseNumber : Int = 0
+
+    // Using by lazy so the database and the repository are only created when they're needed
+    // rather than when the application starts
+    val database by lazy { ExerciseRoomDatabse.getDatabase(this) }
+    val repository by lazy { Repository(database.dao()) }
+
+
+    //private val viewModel = ViewModelProvider(this).get(ExerciseViewModel::class.java)
+    //private val viewModel: ExerciseViewModel = ExerciseViewModel(repository)
+
+    private val viewModel: ExerciseViewModel by viewModels {
+        ExerciseViewModelFactory(repository)
+    }
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        viewModel.flush()
+        var exr:String = ""
+        viewModel.allExercises.observe(this, Observer { exercises ->
+            // Update the cached copy of the words in the adapter.
+            Log.wtf("DFLAKFJLASDKFJALF", exercises[0].title)
+            Log.wtf("DFLAKFJLASDKFJALF", exercises[0].description)
+            Log.wtf("DFLAKFJLASDKFJALF", exercises[0].title)
+            Log.wtf("DFLAKFJLASDKFJALF", exercises[0].title)
+            Log.wtf("DFLAKFJLASDKFJALF", exercises[0].title)
+            Log.wtf("DFLAKFJLASDKFJALF", exercises[0].time.toString())
+            Log.wtf("DFLAKFJLASDKFJALF", exercises[0].description)
+        })
+        viewModel.insert(exercises[3])
+        viewModel.insert(exercises[4])
 
         // init media player
         //mediaPlayer = MediaPlayer.create(this, R.raw.beep)
 
         binding = ActivityExcerciseBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        // BUTTON FOR TOOLBAR
-        //setSupportActionBar(binding.myToolbar)
+
+        // BUTTON FOR CUSTOM TOOLBAR
         binding.btnBack.setOnClickListener {
             onBackPressedDispatcher.onBackPressed()
         }
@@ -63,14 +99,11 @@ class ExerciseActivity : AppCompatActivity() {
                                 /* 1st tick takes 1 away to display  */
 
 
-        // recyclerView.adapter = myAdapter
-        // recyclerView.smoothScrollToPosition(positionStart)
-        // adapter.notifyItemChanged(int position)
-
-
     }// onCreate
 
     private fun rvScroll(){
+        // is scroling to the end, not moving back the begin (or the end is space)
+        // with 5 elements, 4 visible in the screen, scrolling to the 5th hides the 1st, so the 2nd is the 1st
         val howMany = 2
         if( exerciseNumber < 2 )return
         if( exerciseNumber + howMany <= exercises.size -1 ) rv.smoothScrollToPosition(exerciseNumber+howMany)
