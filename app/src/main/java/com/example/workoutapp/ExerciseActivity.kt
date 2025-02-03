@@ -117,17 +117,12 @@ class ExerciseActivity : AppCompatActivity() {
         rv.adapter = adapter
 
 
-
         // set a welcome time of 3, (3 before the 00, 00 lasts the last second) then start
         binding.title.text = "Ready ?"
         setTimerinSeconds(3 + 1 , {dashboard.start()})
                                 /* 1st tick takes 1 away to display  */
 
-
-
     }// onCreate
-
-
 
     private fun start(){
         // first the app begins with setTimeToRest(), just to take air..
