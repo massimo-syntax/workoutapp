@@ -4,11 +4,14 @@ import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.example.workoutapp.ExerciseActivity
 import com.example.workoutapp.R
 import com.example.workoutapp.data.Exercise
 import com.example.workoutapp.databinding.ItemExcerciseBinding
+import java.util.Objects
 
-class ExerciseAdapter(val items : List<Exercise>) : RecyclerView.Adapter<ExerciseAdapter.ViewHolder>() {
+
+class ExerciseAdapter(val items : List<Exercise> , val dashboard: ExerciseActivity.dashboard) : RecyclerView.Adapter<ExerciseAdapter.ViewHolder>() {
 
     inner class ViewHolder(binding : ItemExcerciseBinding) : RecyclerView.ViewHolder(binding.root){
         val itemNumber = binding.tvExcerciseNumberItem
@@ -34,8 +37,15 @@ class ExerciseAdapter(val items : List<Exercise>) : RecyclerView.Adapter<Exercis
             holder.itemNumber.background = null
             holder.itemNumber.setTextColor( Color.parseColor("#FF018786") )
         }
+
         holder.itemNumber.text = (position+1).toString()
         holder.itemImage.setImageResource(item.image)
+
+        holder.itemView.setOnClickListener{
+            dashboard.time.cancel()
+            dashboard.updateExerciseNumber(position)
+            dashboard.start()
+        }
 
     }
 

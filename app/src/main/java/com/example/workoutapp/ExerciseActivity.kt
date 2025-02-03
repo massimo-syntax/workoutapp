@@ -33,13 +33,24 @@ class ExerciseActivity : AppCompatActivity() {
     private lateinit var rv : RecyclerView
     private var remainingTime : Long = 0
 
+
     private val ONE_SECOND : Long = 1000
     //private lateinit var mediaPlayer: MediaPlayer
 
     private val modelFake:ModelFake = ModelFake("singleton")
     private var exercises:List<Exercise> = modelFake.getExercises()
 
-    private var exerciseNumber : Int = 0
+     private var exerciseNumber : Int = 0
+
+
+    private fun setExerciseNumber(n:Int){
+        this.exerciseNumber = n
+    }
+
+    private fun getExerciseNumber() : Int{
+        return this.exerciseNumber
+    }
+
 
     // Using by lazy so the database and the repository are only created when they're needed
     // rather than when the application starts
@@ -53,6 +64,15 @@ class ExerciseActivity : AppCompatActivity() {
     private val viewModel: ExerciseViewModel by viewModels {
         ExerciseViewModelFactory(repository)
     }
+
+
+    object dashboard {
+        lateinit var time : CountDownTimer
+        var start : ()->Unit = fun (){}
+        var updateExerciseNumber : (n:Int)->Unit = fun (n:Int){}
+        var getExerciseNumber : () -> Int = fun(): Int {return 0}
+    }
+
 
 
 
@@ -89,17 +109,39 @@ class ExerciseActivity : AppCompatActivity() {
         rv = binding.rvExcercises
         rv.layoutManager = LinearLayoutManager(this,LinearLayoutManager.HORIZONTAL,false)
 
-        adapter = ExerciseAdapter(exercises)
+        dashboard.start = fun(){ start() } // or settimeto rest
+        dashboard.updateExerciseNumber = fun(n:Int){ this.setExerciseNumber(n) }
+        //dashboard.getExerciseNumber = fun():Int{return this.getExerciseNumber()}
+
+        adapter = ExerciseAdapter(exercises , dashboard)
         rv.adapter = adapter
+
 
 
         // set a welcome time of 3, (3 before the 00, 00 lasts the last second) then start
         binding.title.text = "Ready ?"
-        setTimerinSeconds(3 + 1 , {start()})
+        setTimerinSeconds(3 + 1 , {dashboard.start()})
                                 /* 1st tick takes 1 away to display  */
 
 
+
     }// onCreate
+
+
+
+    private fun start(){
+        // first the app begins with setTimeToRest(), just to take air..
+        exercises.forEachIndexed { index, exercise ->
+            if(exercise.selected){
+                exercise.selected = false
+                adapter.notifyItemChanged(index)
+            }
+        }
+
+        loadExcercise()
+        /* SET TIME TO REST BEGINS TO COUNT, AT THE END STARTS THE CALLBACK CIRLCE */
+    }
+
 
     private fun rvScroll(){
         // is scroling to the end, not moving back the begin (or the end is space)
@@ -109,11 +151,7 @@ class ExerciseActivity : AppCompatActivity() {
         if( exerciseNumber + howMany <= exercises.size -1 ) rv.smoothScrollToPosition(exerciseNumber+howMany)
     }
 
-    private fun start(){
-        // first the app begins with setTimeToRest(), just to take air..
-        loadExcercise()
-        /* SET TIME TO REST BEGINS TO COUNT, AT THE END STARTS THE CALLBACK CIRLCE */
-    }
+
 
     private fun end(){
         binding.title.text = "finished"
@@ -142,7 +180,6 @@ class ExerciseActivity : AppCompatActivity() {
             duration = 2000
             start()
         }
-
 
     }
 
@@ -211,6 +248,8 @@ class ExerciseActivity : AppCompatActivity() {
     }
 
 
+
+
     //  PRINT DATA INTO VIEWS
     fun setExerciseToViews(){
         binding.title.text = exercises[exerciseNumber].title
@@ -224,7 +263,7 @@ class ExerciseActivity : AppCompatActivity() {
         var t : Long = 0 // ..ime
         remainingTime = 0
         // first tick takes already 1 second away, set remainingTime to -1000 does not work...
-        time = object : CountDownTimer(sec*ONE_SECOND , ONE_SECOND ) {
+        dashboard.time = object : CountDownTimer(sec*ONE_SECOND , ONE_SECOND ) {
             override fun onTick(p0: Long) {
                 // first print then update
                 remainingTime += ONE_SECOND //
